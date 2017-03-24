@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mathematics and ToK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/w3.css"></link>
+    <link rel="stylesheet" href="css/font-awesome.min.css"></link>
+    <style>
+    html {
+        height: 100%;
+    }
+    body {
+        height: 100%;
+    }
+    .w3-sidenav {
+        width: 300px;
+    }
+    .content {
+        padding-bottom: 22.5px;
+        transition: margin-left 0.4s;
+    }
+    .w3-progressbar {
+        position: absolute;
+    }
+    .w3-animate-spin {
+        animation:w3-animate-spin 1.6s 1 ease;
+        -webkit-animation:w3-animate-spin 1.6s 1 ease;
+    }
+    @-webkit-keyframes w3-animate-spin {
+        0% {
+            -webkit-transform:rotate(0deg);
+            transform:rotate(0deg);
+        }
+        100%{
+            -webkit-transform:rotate(359deg);
+            transform:rotate(359deg);
+        }
+    }
+    @keyframes w3-animate-spin {
+        0% {
+            -webkit-transform:rotate(0deg);
+            transform:rotate(0deg);
+            opacity: 0;
+        }
+        100% {
+            -webkit-transform:rotate(359deg);
+            transform:rotate(359deg);
+            opacity: 1;
+        }
+    }
+    </style>
+    <script src="js/underscore.min.js"></script>
+    <script src="MathJax/MathJax.js?config=TeX-AMS_CHTML"></script>
+    <script src="js/angular.min.js"></script>
+    <script src="js/angular-route.min.js"></script>
+    <script>
+    var slides = [{
+        name: "Mathematics and ToK",
+        url: "title",
+        animations: ["top", "right", "right", "right", "right"]
+    }, {
+        name: "Introduction",
+        url: "introduction",
+        animations: ["top", "right", "right", "right", "right"]
+    }, {
+        name: "Mathematics and WoK",
+        url: "wok",
+        animations: ["top", "right", "right", "right", "right", "right"]
+    }, {
+        name: "Mathematics and AoK",
+        url: "aok",
+        animations: ["top", "right", "right", "right", "right"]
+    }, {
+        name: "Certainty",
+        url: "certainty",
+        animations: ["top", "right", "right", "right", "right"]
+    }, {
+        name: "Problems",
+        url: "problems",
+        animations: ["top", "right", "right"]
+    }, {
+        name: "Quotes",
+        url: "quotes",
+        animations: ["top", "right", "right", "right", "right", "right", "right", "right"]
+    }];
+    </script>
+    <script>
+    var app = angular.module("app", ["ngRoute"]);
+    var upKeyDown = false;
+    app.controller("body", function ($rootScope, $scope, $location, $route, $routeParams) {
+        $scope.laserPointer = false;
+        $scope.toggleLaserPointer = function () {
+            $scope.laserPointer = !$scope.laserPointer;
+        };
+        $scope.sidenavState = false;
+        $scope.changeSidenavState = function () {
+            $scope.sidenavState = !$scope.sidenavState;
+        };
+        $scope.slide = function (event) {
+            var animations = parseInt($routeParams.animations);
+            if ($location.url().split("/")[1] !== "error") {
+                if (event.keyCode === 38 || event.keyCode === 37) {
+                    event.preventDefault();
+                    var newIndex = _.findIndex(slides, function (slide) {
+                        return $location.url().split("/")[1] === slide.url;
+                    }) - 1;
+                    if (animations === 1) {
+                        if (newIndex > -1) {
+                            $location.url("/" + slides[newIndex].url + "/" + slides[newIndex].animations.length);
+                        }
+                    } else {
+                        $location.url("/" + slides[newIndex + 1].url + "/" + (animations - 1));
+                    }
+                    upKeyDown = true;
+                } else if (event.keyCode === 40 || event.keyCode === 39) {
+                    event.preventDefault();
+                    var newIndex = _.findIndex(slides, function (slide) {
+                        return $location.url().split("/")[1] === slide.url;
+                    }) + 1;
+                    if (animations === slides[newIndex - 1].animations.length) {
+                        if (newIndex < slides.length) {
+                            $location.url("/" + slides[newIndex].url);
+                        }
+                    } else {
+                        $location.url("/" + slides[newIndex - 1].url + "/" + (animations + 1));
+                    }
+                }
+            }
+        };
+    });
+    app.controller("sidenav", function ($scope, $timeout, $location, $routeParams) {
+        $scope.slides = slides;
+        $scope.active = function (url) {
+            return $location.url().split("/")[1] === url;
+        };
+        $scope.sidenavState = false;
+        $scope.animationNum = function () {
+            return $routeParams.animations + " of " + (slides[_.findIndex(slides, function (slide) {
+                return $location.url().split("/")[1] === slide.url;
+            })] || {animations: []}).animations.length;
+        }
+    });
+    app.controller("main", function ($scope, $timeout, $location, $routeParams) {
+        $scope.animations = [];
+        $scope.$on("$routeChangeSuccess", function () {
+            var index = _.findIndex(slides, function (slide) {
+                return $location.url().split("/")[1] === slide.url;
+            });
+            var animations;
+            if (index === -1) {
+                $scope.animations = [{
+                    style: "top",
+                    display: true
+                }];
+            } else {
+                for (var i = 0; i < slides[index].animations.length; i++) {
+                    $scope.animations[i] = {
+                        style: (i === parseInt($routeParams.animations) - 1 && !upKeyDown) ? slides[index].animations[i] : "",
+                        display: (i < parseInt($routeParams.animations))
+                    };
+                }
+            }
+            upKeyDown = false;
+            $timeout(function () {
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            }, 20);
+        });
+    });
+    app.controller("progressBar", function ($rootScope, $scope, $interval, $location) {
+        $rootScope.progress = 0;
+        $interval(function () {
+            $rootScope.progress -= ($rootScope.progress - (_.findIndex(slides, function (slide) {
+                return $location.url().split("/")[1] === slide.url;
+            }) + 1) / slides.length) / 128 * slides.length;
+        }, 10);
+        $scope.progress = function () {
+            return Math.round($rootScope.progress * 10000) / 10000;
+        };
+        $scope.targetProgress = function () {
+            return Math.round((_.findIndex(slides, function (slide) {
+                return $location.url().split("/")[1] === slide.url;
+            }) + 1) / slides.length * 100);
+        };
+    });
+    app.config(["$locationProvider", "$routeProvider", function ($locationProvider, $routeProvider) {
+        $locationProvider.hashPrefix("");
+        $routeProvider.when("/", {
+            redirectTo: "/" + slides[0].url
+        });
+        for (var i = 0; i < slides.length; i++) {
+            $routeProvider.when("/" + slides[i].url, {
+                redirectTo: "/" + slides[i].url + "/1"
+            });
+            $routeProvider.when("/" + slides[i].url + "/:animations", {
+                templateUrl: "slides/" + slides[i].url + ".html"
+            });
+        }
+        $routeProvider.when("/error", {
+            templateUrl: "slides/error.html"
+        });
+        $routeProvider.otherwise({
+            redirectTo: "/error"
+        });
+    }]);
+    </script>
+</head>
+<body class="w3-light-blue" style="{{laserPointer ? 'cursor: url(img/pointer.png) 8 8, pointer' : ''}}" ng-app="app" ng-controller="body" ng-keydown="slide($event)">
+    <div style="{{sidenavState ? 'display: block; width: 300px' : 'display: none; width: 0px'}}">
+        <nav class="w3-sidenav w3-pale-blue w3-card-8 w3-animate-left" ng-controller="sidenav">
+            <header class="w3-container w3-blue">
+                <h3>
+                    Slides
+                    <i class="fa fa-times w3-right" style="cursor:pointer;" ng-click="changeSidenavState()"></i>
+                </h3>
+            </header>
+            <a class="w3-hover-light-blue w3-border-bottom {{active(slide.url) ? 'w3-light-blue' : ''}}" href="#/{{slide.url}}" ng-repeat="slide in slides">
+                {{slide.name}} <span class="w3-tag w3-blue w3-right w3-round-jumbo" ng-show="active(slide.url)">{{animationNum()}}</span>
+            </a>
+            <div class="w3-container w3-margin-top">
+                <button class="{{laserPointer ? 'w3-red' : 'w3-blue'}} w3-round-large w3-btn-block w3-ripple" ng-click="toggleLaserPointer()">
+                    <i class="fa fa-lg fa-magic"></i>
+                    {{laserPointer ? "Close" : "Open"}} laser pointer
+                </button>
+            </div>
+        </nav>
+    </div>
+    <nav class="w3-sidenav w3-pale-blue w3-card-8 w3-animate-left" style="{{sidenavState ? 'display: none; width: 0px' : 'display: block; width: 80px'}}">
+        <div class="w3-blue w3-container w3-center">
+            <h5>
+                <i class="fa fa-lg fa-th-list" style="cursor:pointer;" ng-click="changeSidenavState()"></i>
+            </h5>
+        </div>
+        <div class="w3-container w3-margin-top">
+            <button class="{{laserPointer ? 'w3-red' : 'w3-blue'}} w3-round-large w3-btn-block w3-ripple" ng-click="toggleLaserPointer()">
+                <i class="fa fa-lg fa-magic"></i>
+            </button>
+        </div>
+    </nav>
+    <div class="content" style="{{sidenavState ? 'margin-left: 300px' : 'margin-left: 80px'}}" ng-controller="main">
+        <div ng-view></div>
+    </div>
+    <div class="w3-bottom">
+        <div class="w3-progress-container w3-border-dark-gray w3-pale-blue" ng-controller="progressBar">
+            <div class="w3-progressbar w3-blue" style="width: {{progress() * 100}}%">
+                <div class="w3-text-white w3-left w3-padding-left">
+                    {{targetProgress()}}%
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
